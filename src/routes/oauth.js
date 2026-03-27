@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import User from '../models/User.js';
+import { sendWelcomeEmail } from '../utils/email.js';
 
 const router = express.Router();
 
@@ -41,6 +42,7 @@ router.get('/google/callback', async (req, res) => {
                 password: null
             });
             await user.save();
+            await sendWelcomeEmail(email, name);
         } else if (!user.oauthId) {
             user.oauthProvider = 'google';
             user.oauthId = id;
@@ -102,6 +104,7 @@ router.get('/github/callback', async (req, res) => {
                 password: null
             });
             await user.save();
+            await sendWelcomeEmail(primaryEmail, name || primaryEmail.split('@')[0]);
         } else if (!user.oauthId) {
             user.oauthProvider = 'github';
             user.oauthId = String(id);
@@ -159,6 +162,7 @@ router.get('/discord/callback', async (req, res) => {
                 password: null
             });
             await user.save();
+            await sendWelcomeEmail(email, username);
         } else if (!user.oauthId) {
             user.oauthProvider = 'discord';
             user.oauthId = id;
