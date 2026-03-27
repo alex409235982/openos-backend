@@ -58,6 +58,10 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
+        if (!user.password) {
+            return res.status(401).json({ error: 'Please login with ' + user.oauthProvider });
+        }
+
         const isValid = await user.comparePassword(password);
         if (!isValid) {
             return res.status(401).json({ error: 'Invalid email or password' });
