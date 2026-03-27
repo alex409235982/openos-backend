@@ -16,13 +16,23 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: false,
         minlength: 8
     },
     plan: {
         type: String,
         enum: ['free', 'premium'],
         default: 'free'
+    },
+    oauthProvider: {
+        type: String,
+        enum: ['google', 'github', 'discord', null],
+        default: null
+    },
+    oauthId: {
+        type: String,
+        sparse: true,
+        unique: true
     },
     createdAt: {
         type: Date,
@@ -31,7 +41,7 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
+    if (!this.isModified('password') || !this.password) return next();
 
     try {
         const salt = await bcrypt.genSalt(10);
@@ -43,6 +53,7 @@ userSchema.pre('save', async function(next) {
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword) {
+    if (!this.password) return false;
     return bcrypt.compare(candidatePassword, this.password);
 };
 
