@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './utils/db.js';
 import authRoutes from './routes/auth.js';
+import oauthRoutes from './routes/oauth.js';
 import healthRoutes from './routes/health.js';
 import distrosRoutes from './routes/distros.js';
 import glossaryRoutes from './routes/glossary.js';
@@ -46,6 +47,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/oauth', oauthRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/distros', distrosRoutes);
 app.use('/api/glossary', glossaryRoutes);
