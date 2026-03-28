@@ -5,7 +5,7 @@ dotenv.config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const logoUrl = 'https://i.ibb.co/xt4WD25L/OPENOS-Logo.png';
+const logoUrl = 'https://raw.githubusercontent.com/alex409235982/openos-assets/refs/heads/main/OPENOS%20Logo.png';
 
 export async function sendPasswordResetEmail(email, resetToken) {
     const resetUrl = `${process.env.FRONTEND_URL}/reset?token=${resetToken}`;
