@@ -7,6 +7,8 @@ import oauthRoutes from './routes/oauth.js';
 import healthRoutes from './routes/health.js';
 import distrosRoutes from './routes/distros.js';
 import glossaryRoutes from './routes/glossary.js';
+import sessionRoutes from './routes/sessions.js';
+import userRoutes from './routes/users.js';
 
 dotenv.config();
 
@@ -51,6 +53,8 @@ app.use('/api/oauth', oauthRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/distros', distrosRoutes);
 app.use('/api/glossary', glossaryRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/users', userRoutes);
 
 app.get('/', (req, res) => {
     res.json({
