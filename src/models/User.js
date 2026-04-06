@@ -24,6 +24,18 @@ const userSchema = new mongoose.Schema({
         enum: ['free', 'premium'],
         default: 'free'
     },
+    profilePicture: {
+        type: String,
+        default: null
+    },
+    twoFactorEnabled: {
+        type: Boolean,
+        default: false
+    },
+    twoFactorSecret: {
+        type: String,
+        default: null
+    },
     oauthProvider: {
         type: String,
         enum: ['google', 'github', 'discord', null],
@@ -33,6 +45,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         sparse: true,
         unique: true
+    },
+    preferences: {
+        theme: {
+            type: String,
+            enum: ['light', 'dark'],
+            default: 'light'
+        },
+        blurLevel: {
+            type: Number,
+            min: 0,
+            max: 4,
+            default: 2
+        }
     },
     createdAt: {
         type: Date,
@@ -60,6 +85,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.methods.toJSON = function() {
     const obj = this.toObject();
     delete obj.password;
+    delete obj.twoFactorSecret;
     return obj;
 };
 
