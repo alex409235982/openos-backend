@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
+import speakeasy from 'speakeasy';
 import User from '../models/User.js';
 import PasswordResetToken from '../models/PasswordResetToken.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -47,7 +48,7 @@ router.post('/signup', async (req, res, next) => {
 
 router.post('/login', async (req, res, next) => {
     try {
-        const { email, password, remember } = req.body;
+        const { email, password, remember, twoFactorCode } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
@@ -65,6 +66,23 @@ router.post('/login', async (req, res, next) => {
         const isValid = await user.comparePassword(password);
         if (!isValid) {
             return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        if (user.twoFactorEnabled) {
+            if (!twoFactorCode) {
+                return res.status(401).json({ error: '2FA_REQUIRED' });
+            }
+
+            const verified = speakeasy.totp.verify({
+                secret: user.twoFactorSecret,
+                encoding: 'base32',
+                token: twoFactorCode,
+                window: 1
+            });
+
+            if (!verified) {
+                return res.status(401).json({ error: 'Invalid code' });
+            }
         }
 
         const expiresIn = remember ? '30d' : '7d';
