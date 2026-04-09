@@ -9,18 +9,36 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 const execAsync = promisify(exec);
 
-const NOVNC_URL = 'https://caryl-unvizored-sherie.ngrok-free.dev';
-const VM_NAME = 'ubuntu-base';
+const VM_CONFIGS = {
+  'Ubuntu': {
+    novncUrl: 'https://caryl-unvizored-sherie.ngrok-free.dev',
+    vmName: 'ubuntu-base',
+    vmPort: 8080,
+    username: 'openos',
+    password: 'openos'
+  },
+  'Linux Mint': {
+    novncUrl: 'https://linux-mint.ngrok.app',
+    vmName: 'linux-mint',
+    vmPort: 8081,
+    username: 'openos',
+    password: 'openos'
+  }
+};
+
+const DEFAULT_VM = VM_CONFIGS['Ubuntu'];
+
 let activeSessionLock = false;
 let currentSessionUserId = null;
+let currentVMName = 'ubuntu-base';
 let resetInProgress = false;
 
-async function resetVM() {
+async function resetVM(vmName) {
   resetInProgress = true;
   try {
-    await execAsync(`virsh destroy ${VM_NAME} 2>/dev/null || true`);
-    await execAsync(`virsh snapshot-revert ${VM_NAME} clean`);
-    await execAsync(`virsh start ${VM_NAME}`);
+    await execAsync(`virsh destroy ${vmName} 2>/dev/null || true`);
+    await execAsync(`virsh snapshot-revert ${vmName} clean`);
+    await execAsync(`virsh start ${vmName}`);
     await new Promise(resolve => setTimeout(resolve, 30000));
   } finally {
     resetInProgress = false;
@@ -45,17 +63,20 @@ router.post('/', authenticateToken, async (req, res, next) => {
       return res.status(400).json({ error: 'You already have an active session' });
     }
 
-    if (!activeSessionLock) {
-      if (currentSessionUserId && currentSessionUserId !== userId) {
-        await resetVM();
-      }
-      activeSessionLock = true;
-      currentSessionUserId = userId;
-    }
-
     const distro = await Distro.findById(distroId);
     if (!distro) {
       return res.status(404).json({ error: 'Distribution not found' });
+    }
+
+    const vmConfig = VM_CONFIGS[distro.name] || DEFAULT_VM;
+
+    if (!activeSessionLock) {
+      if (currentSessionUserId && currentSessionUserId !== userId) {
+        await resetVM(currentVMName);
+      }
+      activeSessionLock = true;
+      currentSessionUserId = userId;
+      currentVMName = vmConfig.vmName;
     }
 
     const session = new Session({
@@ -63,10 +84,10 @@ router.post('/', authenticateToken, async (req, res, next) => {
       distroId,
       distroName: distro.name,
       distroLogo: distro.logo,
-      vmUsername: 'openos',
-      vmPassword: 'openos',
-      vmId: VM_NAME,
-      vmPort: 8080,
+      vmUsername: vmConfig.username,
+      vmPassword: vmConfig.password,
+      vmId: vmConfig.vmName,
+      vmPort: vmConfig.vmPort,
       status: 'running'
     });
 
@@ -74,10 +95,10 @@ router.post('/', authenticateToken, async (req, res, next) => {
 
     res.status(201).json({
       ...session.toJSON(),
-      novncUrl: NOVNC_URL,
-      vmUsername: 'openos',
-      vmPassword: 'openos',
-      websocketUrl: `${NOVNC_URL.replace('https', 'wss')}/websockify`
+      novncUrl: vmConfig.novncUrl,
+      vmUsername: vmConfig.username,
+      vmPassword: vmConfig.password,
+      websocketUrl: `${vmConfig.novncUrl.replace('https', 'wss')}/websockify`
     });
   } catch (error) {
     next(error);
@@ -102,7 +123,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
           if (currentSessionUserId === req.user._id.toString()) {
             activeSessionLock = false;
             currentSessionUserId = null;
-            resetVM().catch(console.error);
+            resetVM(currentVMName).catch(console.error);
           }
         }
       }
@@ -140,7 +161,7 @@ router.post('/:sessionId/end', authenticateToken, async (req, res, next) => {
     if (currentSessionUserId === req.user._id.toString()) {
       activeSessionLock = false;
       currentSessionUserId = null;
-      resetVM().catch(console.error);
+      resetVM(currentVMName).catch(console.error);
     }
     
     res.json({ message: 'Session ended. VM is being reset for next user.' });
@@ -161,7 +182,8 @@ router.post('/:sessionId/reset', authenticateToken, async (req, res, next) => {
       return res.status(400).json({ error: 'Session is not running' });
     }
     
-    await resetVM();
+    const vmConfig = VM_CONFIGS[session.distroName] || DEFAULT_VM;
+    await resetVM(vmConfig.vmName);
     
     res.json({ message: 'VM has been reset to clean state.' });
   } catch (error) {
@@ -176,6 +198,7 @@ router.get('/status', authenticateToken, async (req, res, next) => {
       available: isAvailable,
       resetInProgress: resetInProgress,
       currentUserId: currentSessionUserId,
+      currentVM: currentVMName,
       isCurrentUser: currentSessionUserId === req.user._id.toString()
     });
   } catch (error) {
