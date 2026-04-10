@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    tutorialProgress: {
+        type: Map,
+        of: {
+         completed: Boolean,
+         completedAt: Date
+        },
+        default: {}
+    },
     twoFactorEnabled: {
         type: Boolean,
         default: false

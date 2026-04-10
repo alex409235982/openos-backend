@@ -9,6 +9,7 @@ import distrosRoutes from './routes/distros.js';
 import glossaryRoutes from './routes/glossary.js';
 import sessionRoutes from './routes/sessions.js';
 import userRoutes from './routes/users.js';
+import tutorialRoutes from './routes/tutorials.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ app.use('/api/distros', distrosRoutes);
 app.use('/api/glossary', glossaryRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/tutorials', tutorialRoutes);
 
 app.get('/', (req, res) => {
     res.json({
