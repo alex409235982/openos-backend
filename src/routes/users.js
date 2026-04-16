@@ -2,12 +2,14 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
+import Stripe from 'stripe';
 import User from '../models/User.js';
 import Session from '../models/Session.js';
 import PasswordResetToken from '../models/PasswordResetToken.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 router.post('/profile-picture', authenticateToken, async (req, res, next) => {
     try {
@@ -308,6 +310,53 @@ router.put('/preferences', authenticateToken, async (req, res, next) => {
             message: 'Preferences updated',
             preferences: req.user.preferences
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/billing', authenticateToken, async (req, res, next) => {
+    try {
+        const user = req.user;
+        
+        if (user.plan !== 'premium') {
+            return res.json({ plan: 'free' });
+        }
+        
+        const billingInfo = {
+            plan: 'premium',
+            paymentMethod: null,
+            expiresAt: null,
+            stripePortalUrl: null
+        };
+        
+        const latestSession = await Session.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        if (latestSession && latestSession.createdAt) {
+            const expiresAt = new Date(latestSession.createdAt);
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+            billingInfo.expiresAt = expiresAt;
+        } else {
+            const expiresAt = new Date();
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+            billingInfo.expiresAt = expiresAt;
+        }
+        
+        if (user.stripeCustomerId) {
+            billingInfo.paymentMethod = 'stripe';
+            try {
+                const portalSession = await stripe.billingPortal.sessions.create({
+                    customer: user.stripeCustomerId,
+                    return_url: `${process.env.FRONTEND_URL}/settings`,
+                });
+                billingInfo.stripePortalUrl = portalSession.url;
+            } catch (err) {
+                console.error('Failed to create portal session:', err);
+            }
+        } else {
+            billingInfo.paymentMethod = 'crypto';
+        }
+        
+        res.json(billingInfo);
     } catch (error) {
         next(error);
     }

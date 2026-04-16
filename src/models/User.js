@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
         enum: ['free', 'premium'],
         default: 'free'
     },
+    stripeCustomerId: {
+        type: String,
+        default: null
+    },
     profilePicture: {
         type: String,
         default: null

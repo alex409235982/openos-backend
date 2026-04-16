@@ -10,6 +10,7 @@ import glossaryRoutes from './routes/glossary.js';
 import sessionRoutes from './routes/sessions.js';
 import userRoutes from './routes/users.js';
 import tutorialRoutes from './routes/tutorials.js';
+import premiumRoutes from './routes/premium.js';
 
 dotenv.config();
 
@@ -37,6 +38,8 @@ app.use(cors({
     credentials: true
 }));
 
+app.use('/api/premium/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 
 app.use(async (req, res, next) => {
@@ -57,6 +60,7 @@ app.use('/api/glossary', glossaryRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutorials', tutorialRoutes);
+app.use('/api/premium', premiumRoutes);
 
 app.get('/', (req, res) => {
     res.json({
