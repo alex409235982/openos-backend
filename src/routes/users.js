@@ -251,7 +251,9 @@ router.post('/oauth/disconnect', authenticateToken, async (req, res, next) => {
             return res.status(400).json({ error: 'Provider not connected' });
         }
         
-        if (!req.user.password) {
+        const hasValidPassword = req.user.password && req.user.password.length > 0;
+        
+        if (!hasValidPassword) {
             return res.status(400).json({ error: 'Please set a password before disconnecting OAuth' });
         }
         
