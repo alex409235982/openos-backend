@@ -11,6 +11,7 @@ import sessionRoutes from './routes/sessions.js';
 import userRoutes from './routes/users.js';
 import tutorialRoutes from './routes/tutorials.js';
 import premiumRoutes from './routes/premium.js';
+import favoriteRoutes from './routes/favorites.js';
 
 dotenv.config();
 
@@ -61,6 +62,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutorials', tutorialRoutes);
 app.use('/api/premium', premiumRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 app.get('/', (req, res) => {
     res.json({

@@ -346,7 +346,7 @@ router.get('/billing', authenticateToken, async (req, res, next) => {
             try {
                 const portalSession = await stripe.billingPortal.sessions.create({
                     customer: user.stripeCustomerId,
-                    return_url: `${process.env.FRONTEND_URL}/settings`,
+                    return_url: `${process.env.FRONTEND_URL}/dashboard`,
                 });
                 billingInfo.stripePortalUrl = portalSession.url;
             } catch (err) {
